@@ -1,10 +1,12 @@
-import 'dart:math';
+//import 'dart:js';
 
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:developer' as devtools;
 
-import '../firebase_options.dart';
+import 'package:mynotes/constants/route.dart';
+
+import '../utilities/show_error_dialog.dart';
 
 class LoginView extends StatefulWidget {
   const LoginView({Key? key}) : super(key: key);
@@ -27,7 +29,7 @@ class _LoginViewState extends State<LoginView> {
   @override
   void dispose() {
     _email.dispose();
-    _password.dispose(); // TODO: implement dispose
+    _password.dispose();
     super.dispose();
   }
 
@@ -57,27 +59,46 @@ class _LoginViewState extends State<LoginView> {
               final password = _password.text;
               try {
                 final userCredential = await FirebaseAuth.instance
-                    .signInWithEmailAndPassword(email: email, password: password);
-                print(userCredential);
+                    .signInWithEmailAndPassword(
+                        email: email, password: password);
+                devtools.log(userCredential.toString());
+                Navigator.of(context)
+                    .pushNamedAndRemoveUntil(notesRoute, (route) => false);
               } on FirebaseAuthException catch (e) {
                 if (e.code == 'user-not-found') {
-                  print('User not found');
+                  await showErrorDialogue(
+                    context,
+                    'User not found',
+                  );
                 } else if (e.code == 'wrong-password') {
-                  print('Wrong password');
+                  await showErrorDialogue(
+                    context,
+                    'Wrong credentials',
+                  );
+                } else {
+                  await showErrorDialogue(
+                    context,
+                    'Error: ${e.code}',
+                  );
                 }
+              } catch (e) {
+                await showErrorDialogue(
+                  context,
+                  e.toString(),
+                );
               }
-              ;
             },
             child: const Text('Login'),
           ),
           TextButton(
               onPressed: () {
                 Navigator.of(context)
-                    .pushNamedAndRemoveUntil('/register/', (route) => false);
+                    .pushNamedAndRemoveUntil(registerRoute, (route) => false);
               },
               child: const Text('Not registered yet? Register here'))
         ],
       ),
-    ); // TODO: Handle this case.
+    );
   }
 }
+
